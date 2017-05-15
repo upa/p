@@ -1,0 +1,29 @@
+/* p.css */
+
+body {
+	font-family: Consolas, Courier, Monaco, monospace;
+	font-size: 14.5px;
+	line-height: 1;
+	padding: 10px 10px 10px 10px;
+	background-color: #212121;
+	color: #eeee;
+}
+
+h1,h2,h3,h4,h5,h6 {
+	margin: 0 0 0 0;
+	font-weight: normal;
+	font-size: 1.8em;
+}
+
+/* upload form*/
+#upload {
+	margin: 10px 0 0 0;
+}
+
+.uploaded-user {
+	width: 40px;
+}
+
+form#upload-form input {
+	margin: 0 10px 0 0;
+}

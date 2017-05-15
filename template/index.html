@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title> photo uploader </title>
+    <link rel="stylesheet" href="css/p.css">
+    <script src="js/jquery-3.2.1.min.js"></script>
+    <script src="js/p.js"></script>
+  </head>
+
+  <body>
+
+    <div id="header">
+      <h1> PHOTO UPLOADER </h1>
+    </div>
+
+    <div id="upload">
+      <form id="upload-form">
+	raw/jpg/png/zip
+	<input type="file" name="uploaded-file"
+	       accept=".jpg,.png">,</input>
+
+	uploaded by
+	<input type="text" name="uploaded-user" class="uploaded-user">,</input>
+
+	<button type="button" onclick="upload()"> UpLoad! </button>
+      </form>
+    </div>
+
+    <div id="content">
+    </div>
+  </body>
+</html>
