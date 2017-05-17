@@ -1,10 +1,12 @@
 #!/opt/local/Library/Frameworks/Python.framework/Versions/2.7/bin/python
 # -*- coding: utf-8 -*-
 
-
+import re
 import os
 import cgi
 from jinja2 import Environment, FileSystemLoader
+
+import zipfile
 
 from PIL import Image
 from PIL.ExifTags import TAGS
@@ -83,6 +85,43 @@ def index(message) :
     print html
 
 
+def handle_zip(fm_file, fm_user) :
+
+    # copy and unzip the zip file at /tmp
+    zip = os.path.join("/tmp", fm_file.filename)
+
+    fo = file(zip, "wb")
+    while True :
+        chunk = fm_file.file.read(4096)
+        if not chunk: break
+        fo.write(chunk)
+    fo.close()
+
+    # copy photo files from zip archive to image directory
+    uploaded_files = []
+    with zipfile.ZipFile(zip, 'r') as z:
+        
+        for filepath in z.namelist() :
+
+            if re.search(r'\.(png|PNG|jpg|JPG)', filepath) :
+                filename = filepath.split('/').pop()
+                if filename[0] == "." : continue
+
+            else :
+                continue
+
+            with z.open(filepath) as f :
+                image = os.path.join(image_dir, fm_user.value, filename)
+                thumb = os.path.join(thumb_dir, fm_user.value, filename)
+                create_image_and_thumb(f, image, thumb)
+
+                uploaded_files.append(filename)
+
+    os.remove(zip)
+
+    return "%s uploaded by %s" % (", ".join(uploaded_files), fm_user.value)
+
+
 def upload() :
 
     form = cgi.FieldStorage()
@@ -109,24 +148,33 @@ def upload() :
         os.chmod(user_thumb_dir, 0777)
 
 
+    if re.search(r'\.zip$', fm_file.filename) :
+        return handle_zip(fm_file, fm_user)
+        
+
     # write uploaded file to image directory
     image = os.path.join(image_dir, fm_user.value, fm_file.filename)
     thumb = os.path.join(thumb_dir, fm_user.value, fm_file.filename)
+    create_image_and_thumb(fm_file.file, image, thumb)
 
+    return "%s is uploaded by %s" % (fm_file.filename, fm_user.value)
+
+
+def create_image_and_thumb(f_in, image, thumb) :
+    
     fo = file(image, "wb")
     while True :
-        chunk = fm_file.file.read(1024)
+        chunk = f_in.read(4096)
         if not chunk : break
         fo.write(chunk)
     fo.close()
-
 
     # create thumbnail
     im = Image.open(image)
     im.thumbnail((thumb_width, thumb_height), Image.ANTIALIAS)
     im.save(thumb)
 
-    return "%s is uploaded by %s" % (fm_file.filename, fm_user.value)
+    return
 
 
 if __name__ == "__main__" :
