@@ -10,23 +10,41 @@
   <body>
 
     <div id="header">
-      <h1> PHOTO UPLOADER </h1>
+      <h1> <a href="index.cgi"> {{ page_title }} </a> </h1>
     </div>
 
     <div id="upload">
-      <form id="upload-form">
-	raw/jpg/png/zip
-	<input type="file" name="uploaded-file"
-	       accept=".jpg,.png">,</input>
-
+      <form id="upload-form" action="index.cgi"
+	    method="POST" enctype="multipart/form-data">
+	jpg/png
+	<input type="file" name="upload-file" accept=".jpg,.png">
 	uploaded by
-	<input type="text" name="uploaded-user" class="uploaded-user">,</input>
-
-	<button type="button" onclick="upload()"> UpLoad! </button>
+	<input type="text" name="upload-user" class="uploaded-user">
+	<input name="submit" type="submit" value="UpLoad!"> 
       </form>
+
+      {% if message %}
+      <p> {{ message }} </p>
+      {% endif %}
+
     </div>
 
     <div id="content">
+
+      {% for p in photos %}
+      <div class="photo-frame">
+	<div class="photo">
+	  <a href="{{ p.image }}" target="_blank">
+	    <img src="{{ p.thumbnail }}"/>
+	  </a>
+	</div>
+	<div class="caption">
+	  {{ p.date }} {{ p.name }} by {{ p.user }}
+	</div>
+      </div>
+      {% endfor %}
+
     </div>
+
   </body>
 </html>
