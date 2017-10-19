@@ -1,4 +1,4 @@
-#!/opt/local/Library/Frameworks/Python.framework/Versions/2.7/bin/python
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 import re
@@ -7,9 +7,12 @@ import cgi
 from jinja2 import Environment, FileSystemLoader
 
 import zipfile
+import datetime
+import Cookie
 
 from PIL import Image
 from PIL.ExifTags import TAGS
+import sys
 
 page_title = "Photo UpLoader"
 
@@ -22,6 +25,8 @@ thumb_height = 190
 
 env = Environment(loader = FileSystemLoader("./", encoding = "utf-8"))
 tpl_index = env.get_template("template/index.html")
+
+cookie_user = None
 
 
 def get_date_of_image_from_exif(image) :
@@ -37,9 +42,41 @@ def get_date_of_image_from_exif(image) :
     for tag_id, value in exif.items() :
         tag = TAGS.get(tag_id, tag_id)
         if tag == "DateTimeOriginal" :
+            return value.replace(":", "/", 2) # YYYY:MM:DD to YYYY/MM/DD
+
+    return None
+
+def get_model_of_image_from_exif(image) :
+
+    im = Image.open(image)
+
+    try:
+        exif = im._getexif()
+    except AttributeError :
+        return None
+
+    for tag_id, value in exif.items() :
+        tag = TAGS.get(tag_id, tag_id)
+        if tag == "Model" :
             return value
 
     return None
+
+def get_orientation_of_image_from_exif(image) :
+
+    im = Image.open(image)
+
+    try:
+        exif = im._getexif()
+    except AttributeError :
+        return None
+
+    for tag_id, value in exif.items() :
+        tag = TAGS.get(tag_id, tag_id)
+        if tag == "Orientation" :
+            return value
+
+    return 1 # orientation is not changed
 
 
 def index(message) :
@@ -47,11 +84,16 @@ def index(message) :
     photos = []
 
     # retrieve thumbnails and images, and generate phtoto lists
-    # a photo is
-    # { 'image' : image path, 'thumbnail' : thumbnail path,
-    #   'caption' : caption string }
 
     users = os.listdir(image_dir)
+    filter_users = []
+
+    # get filtered user if specified through filter-form
+    form = cgi.FieldStorage()
+    if "filter-user" in form and form["filter-user"].value != "_all_" :
+        filter_user = form["filter-user"].value
+    else :
+        filter_user = None
 
     for user in users :
 
@@ -59,6 +101,11 @@ def index(message) :
         user_thumb_dir = os.path.join(thumb_dir, user)
 
         if not os.path.isdir(user_image_dir) :
+            continue
+
+        filter_users.append(user)
+
+        if filter_user and filter_user != user :
             continue
 
         images = os.listdir(user_image_dir)
@@ -69,20 +116,33 @@ def index(message) :
             p["thumbnail"] = os.path.join(user_thumb_dir, image)
 
             p["user"] = user
-            p["date"] = get_date_of_image_from_exif(p["image"])
             p["name"] = image
+            p["date"] = get_date_of_image_from_exif(p["image"])
+            p["model"] = get_model_of_image_from_exif(p["image"])
             photos.append(p)
 
 
+    filter_users.sort(key = str.lower)
     photos.sort(key = lambda x : x["date"])
     photos.reverse()
 
+    if cookie_user :
+        expire = datetime.datetime.today() + datetime.timedelta(days = 365)
+        e = expire.strftime("%a, %d-%b-%Y 00:00:00 GMT")
+        c = "Set-Cookie: username=%s; expires=%s;" % (cookie_user, e)
+    else :
+        c = None
+
     html = tpl_index.render({"photos" : photos,
                              "page_title" : page_title,
+                             "cookie" : c,
+                             "cookie_user" : cookie_user,
+                             "filter_user" : filter_user,
+                             "filter_users" : filter_users,
                              "message" : message})
 
     print "Content-Type: text/html; charset=utf-8\n"
-    print html
+    sys.stdout.write(html.encode('utf-8'))
 
 
 def handle_zip(fm_file, fm_user) :
@@ -147,6 +207,9 @@ def upload() :
         os.mkdir(user_thumb_dir)
         os.chmod(user_thumb_dir, 0777)
 
+    # set cookie
+    global cookie_user
+    cookie_user = fm_user.value
 
     if re.search(r'\.zip$', fm_file.filename) :
         return handle_zip(fm_file, fm_user)
@@ -170,9 +233,26 @@ def create_image_and_thumb(f_in, image, thumb) :
     fo.close()
 
     # create thumbnail
+
+    convert_image = {
+        1: lambda img: img,
+        2: lambda img: img.transpose(Image.FLIP_LEFT_RIGHT),
+        3: lambda img: img.transpose(Image.ROTATE_180),
+        4: lambda img: img.transpose(Image.FLIP_TOP_BOTTOM),
+        5: lambda img: \
+        img.transpose(Image.FLIP_LEFT_RIGHT).transpose(Image.ROTATE_90),
+        6: lambda img: img.transpose(Image.ROTATE_270),
+        7: lambda img: \
+        img.transpose(Image.FLIP_LEFT_RIGHT).transpose(Image.ROTATE_270),
+        8: lambda img: img.transpose(Image.ROTATE_90),
+    }
+
+    orientation = get_orientation_of_image_from_exif(image)
+
     im = Image.open(image)
-    im.thumbnail((thumb_width, thumb_height), Image.ANTIALIAS)
-    im.save(thumb)
+    conv = convert_image[orientation](im)
+    conv.thumbnail((thumb_width, thumb_height), Image.ANTIALIAS)
+    conv.save(thumb)
 
     return
 
@@ -181,7 +261,19 @@ if __name__ == "__main__" :
 
     upload_ret = None
 
-    if os.environ["REQUEST_METHOD"] == "POST" :
-        upload_ret = upload()
+    try :
+        if os.environ["REQUEST_METHOD"] == "POST" :
+            upload_ret = upload()
+    except :
+        pass
+
+    if "HTTP_COOKIE" in os.environ :
+        try:
+            cookie = Cookie.SimpleCookie()
+            cookie.load(os.environ["HTTP_COOKIE"])
+            if cookie["username"].value :
+                cookie_user = cookie["username"].value
+        except:
+            pass
 
     index(upload_ret)

@@ -3,10 +3,10 @@
 body {
 	font-family: Consolas, Courier, Monaco, monospace;
 	font-size: 14.5px;
-	line-height: 1;
+	line-height: 1.15;
 	padding: 10px 10px 10px 10px;
 	background-color: #212121;
-	color: #eeee;
+	color: #eee;
 }
 
 h1,h2,h3,h4,h5,h6 {
@@ -18,17 +18,23 @@ h1,h2,h3,h4,h5,h6 {
 a:link,
 a:visited {
 	text-decoration: none;
-	color: #eeee;
+	color: #eee;
 }
 a:hover,
 a:active,
 a:focus {
 	text-decoration: underline;
-	color: #eeee;
+	color: #eee;
 }
 
+/* clearfix class */
+.clearfix:before,
+.clearfix:after	{ content: " "; display: table; }
+.clearfix:after	{ clear: both; }
+.clearfix 	{ *zoom: 1; }
 
-/* upload form*/
+
+/* upload form */
 #upload {
 	margin: 10px 0 0 0;
 }
@@ -41,6 +47,15 @@ form#upload-form input {
 	margin: 0 10px 0 0;
 }
 
+/* filter form */
+#filter {
+	margin: 10px 0 0 0;
+}
+
+form#filter-form select {
+	margin: 0 10px 0 0;
+}
+
 /* content area */
 #content {
 	margin: 10px 0 0 0;
@@ -50,7 +65,7 @@ form#upload-form input {
 div.photo-frame {
 	float: left;
 	width: 250px;
-	height: 250px;
+	height: 270px;
 	border: gray 1px solid;
 	box-sizing: border-box;
 	margin: 10px 10px 10px 10px;
@@ -72,3 +87,10 @@ div.photo img {
 div.caption {
 	margin-top: 10px;
 }
+
+/* footer */
+#footer {
+	margin: 10px 0 0 0;
+	text-align: right;
+}
+

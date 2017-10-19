@@ -3,6 +3,9 @@
   <head>
     <title> {{ page_title }} </title>
     <link rel="stylesheet" href="css/p.css">
+    {% if cookie %}
+    <meta http-equiv="Set-Cookie" content="{{ cookie }}">
+    {% endif %}
     <script src="js/jquery-3.2.1.min.js"></script>
     <script src="js/p.js"></script>
   </head>
@@ -16,12 +19,17 @@
     <div id="upload">
       <form id="upload-form" action="index.cgi"
 	    method="POST" enctype="multipart/form-data">
-	jpg/png/zip
+	upload: jpg/png/zip
 	<input type="file" name="upload-file" accept=".jpg,.png,.zip">
-	uploaded by
-	<input type="text" name="upload-user" class="uploaded-user">
+	User
+	<input type="text" name="upload-user" class="uploaded-user"
+	       {% if cookie_user %}
+	       value="{{ cookie_user }}"
+	       {% endif %}
+	       >
 	<input name="submit" type="submit" value="UpLoad!"> 
       </form>
+      
 
       {% if message %}
       <p> {{ message }} </p>
@@ -30,7 +38,24 @@
 
     </div>
 
-    <div id="content">
+    <div id="filter">
+      <form id="filter-form" action="index.cgi"
+	    method="GET" enctype="multipart/form-data">
+	filter: user <select name="filter-user">
+	  <option value="_all_"> all </option>
+	  {% for filter_user in filter_users %}
+	  <option value="{{ filter_user }}"> {{ filter_user }} </option>
+	  {% endfor %}
+	</select>
+	<input name="submit" type="submit" value="Filter!">
+	{% if filter_user %}
+	filtered by user {{ filter_user }}
+	{% endif %}
+      </form>
+    </div>
+
+
+    <div id="content" class="clearfix">
 
       {% for p in photos %}
       <div class="photo-frame">
@@ -40,11 +65,19 @@
 	  </a>
 	</div>
 	<div class="caption">
-	  {{ p.date }} {{ p.name }} by {{ p.user }}
+	  {% if p.date %}
+	  {{ p.date }} {{ p.name }} by {{ p.user }} with {{ p.model }}
+	  {% else %}
+	  {{ p.name }} by {{ p.user }} (no exif data)
+	  {% endif %}
 	</div>
       </div>
       {% endfor %}
 
+    </div>
+
+    <div id="footer">
+      {{ page_title }}
     </div>
 
   </body>
