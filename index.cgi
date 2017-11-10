@@ -14,10 +14,10 @@ from PIL import Image
 from PIL.ExifTags import TAGS
 import sys
 
-page_title = "Photo UpLoader"
-
-image_dir = "image"
-thumb_dir = "thumb"
+import pconfig # configuration of p
+page_title = pconfig.page_title
+image_dir = pconfig.image_dir
+thumb_dir = pconfig.thumb_dir
 
 thumb_width = 230
 thumb_height = 190
