@@ -65,7 +65,7 @@ form#filter-form select {
 div.photo-frame {
 	float: left;
 	width: 250px;
-	height: 270px;
+	height: 285px;
 	border: gray 1px solid;
 	box-sizing: border-box;
 	margin: 10px 10px 10px 10px;

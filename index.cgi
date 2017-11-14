@@ -6,6 +6,19 @@ import os
 import cgi
 from jinja2 import Environment, FileSystemLoader
 
+from logging import getLogger, DEBUG, StreamHandler, Formatter
+from logging.handlers import SysLogHandler
+
+logger = getLogger(__name__)
+logger.setLevel(DEBUG)
+stream = StreamHandler()
+syslog = SysLogHandler(address = "/dev/log")
+syslog.setFormatter(Formatter("p: %(message)s"))
+logger.addHandler(stream)
+logger.addHandler(syslog)
+logger.propagate = False
+
+
 import zipfile
 import datetime
 import Cookie
@@ -14,7 +27,7 @@ from PIL import Image
 from PIL.ExifTags import TAGS
 import sys
 
-page_title = "Photo UpLoader"
+page_title = "Photo UpLoader [ShowNet 2018]"
 
 image_dir = "image"
 thumb_dir = "thumb"
@@ -69,7 +82,7 @@ def get_orientation_of_image_from_exif(image) :
     try:
         exif = im._getexif()
     except AttributeError :
-        return None
+        return 1
 
     for tag_id, value in exif.items() :
         tag = TAGS.get(tag_id, tag_id)
@@ -179,7 +192,7 @@ def handle_zip(fm_file, fm_user) :
 
     os.remove(zip)
 
-    return "%s uploaded by %s" % (", ".join(uploaded_files), fm_user.value)
+    return uploaded_files
 
 
 def upload() :
@@ -192,7 +205,8 @@ def upload() :
     if fm_user.value is "" :
         return "empty user name is prohibited"
 
-    if not fm_file.file or not fm_file.filename :
+    if (not isinstance(fm_file, list) and
+        (not fm_file.file or not fm_file.filename)) :
         return "file not specified"
 
     # user directory check
@@ -207,20 +221,33 @@ def upload() :
         os.mkdir(user_thumb_dir)
         os.chmod(user_thumb_dir, 0777)
 
+
     # set cookie
     global cookie_user
     cookie_user = fm_user.value
 
-    if re.search(r'\.zip$', fm_file.filename) :
-        return handle_zip(fm_file, fm_user)
+    if not isinstance(fm_file, list):
+        fm_files = [fm_file]
+    else :
+        fm_files = fm_file
+
+    logger.info("fm_files: %s" % fm_files)
+
+    uploaded_files = []
+
+    for fm in fm_files :
+
+        if re.search(r'\.zip$', fm.filename) :
+            uploaded_files += handle_zip(fm, fm_user)
         
+        else :
+            # write uploaded file to image directory
+            image = os.path.join(image_dir, fm_user.value, fm.filename)
+            thumb = os.path.join(thumb_dir, fm_user.value, fm.filename)
+            create_image_and_thumb(fm.file, image, thumb)
+            uploaded_files.append(fm.filename)
 
-    # write uploaded file to image directory
-    image = os.path.join(image_dir, fm_user.value, fm_file.filename)
-    thumb = os.path.join(thumb_dir, fm_user.value, fm_file.filename)
-    create_image_and_thumb(fm_file.file, image, thumb)
-
-    return "%s is uploaded by %s" % (fm_file.filename, fm_user.value)
+    return "%s uploaded by %s" % (" ".join(uploaded_files), fm_user.value)
 
 
 def create_image_and_thumb(f_in, image, thumb) :
