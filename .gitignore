@@ -2,3 +2,4 @@
 thumb
 image
 .htaccess
+*.pyc
