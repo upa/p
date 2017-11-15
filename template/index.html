@@ -6,8 +6,8 @@
     {% if cookie %}
     <meta http-equiv="Set-Cookie" content="{{ cookie }}">
     {% endif %}
-    <script src="js/jquery-3.2.1.min.js"></script>
     <script src="js/p.js"></script>
+    <script src="js/blazy.min.js"></script>
   </head>
 
   <body>
@@ -61,7 +61,10 @@
       <div class="photo-frame">
 	<div class="photo">
 	  <a href="{{ p.image }}" target="_blank">
-	    <img src="{{ p.thumbnail }}"/>
+	    <!-- <img src="{{ p.thumbnail }}"/> -->
+	    <img class="b-lazy" src="load.gif"
+		 data-src="{{ p.thumbnail }}"
+		 data-src-small="{{ p.thumbnail }}">
 	  </a>
 	</div>
 	<div class="caption">
@@ -79,6 +82,12 @@
     <div id="footer">
       {{ page_title }}
     </div>
+
+    <script type="text/javascript">
+      var bLazy = new Blazy({
+      success: function(e){ setTimeout(function(){}, 200); }
+      });
+    </script>
 
   </body>
 </html>
