@@ -36,20 +36,27 @@ a:focus {
 
 /* upload form */
 #upload {
-	margin: 10px 0 0 0;
-}
-
-.uploaded-user {
-	width: 40px;
+	margin: 10px 0 10px 0;
 }
 
 form#upload-form input {
 	margin: 0 10px 0 0;
 }
 
+.uploaded-user {
+	width: 40px;
+}
+
+.upload-form-component {
+	margin: 10px 0 0 0;
+}
+
+
 /* filter form */
 #filter {
 	margin: 10px 0 0 0;
+	padding: 10px 0 0 0;
+	border-top: gray 1px solid;
 }
 
 form#filter-form select {

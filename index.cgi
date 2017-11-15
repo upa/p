@@ -32,8 +32,8 @@ page_title = pconfig.page_title
 image_dir = pconfig.image_dir
 thumb_dir = pconfig.thumb_dir
 
-thumb_width = 230
-thumb_height = 190
+thumb_width = 460
+thumb_height = 380
 
 
 env = Environment(loader = FileSystemLoader("./", encoding = "utf-8"))

@@ -2,6 +2,7 @@
 <html lang="en">
   <head>
     <title> {{ page_title }} </title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
     <link rel="stylesheet" href="css/p.css">
     {% if cookie %}
     <meta http-equiv="Set-Cookie" content="{{ cookie }}">
@@ -19,15 +20,25 @@
     <div id="upload">
       <form id="upload-form" action="index.cgi"
 	    method="POST" enctype="multipart/form-data">
-	upload: jpg/png/zip
-	<input type="file" name="upload-file" accept=".jpg,.png,.zip" multiple>
-	User
+
+	<div class="upload-form-component">
+	  File select: (multiple) jpg/png
+	  <input type="file" name="upload-file" accept="image/*" multiple>
+	</div>
+
+	<div class="upload-form-component">
+	User:
 	<input type="text" name="upload-user" class="uploaded-user"
 	       {% if cookie_user %}
 	       value="{{ cookie_user }}"
 	       {% endif %}
 	       >
-	<input name="submit" type="submit" value="UpLoad!"> 
+	</div>
+
+	<div class="upload-form-component">
+	  Submit: <input name="submit" type="submit" value="UpLoad!">
+	</div>
+
       </form>
       
 
