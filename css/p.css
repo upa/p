@@ -94,3 +94,25 @@ div.caption {
 	text-align: right;
 }
 
+
+
+@media screen and ( max-width: 667px )
+{
+    /* mobile phone */
+    div.photo-frame {
+	width: 100%;
+	height: 100%;
+	margin: 10px 0 10px 0;
+    }
+
+    div.photo {
+	width: 100%;
+	height: 100%;
+    }
+
+    div.photo img {
+	width: 100%;
+	height: 100%;
+    }
+
+}
