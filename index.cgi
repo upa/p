@@ -42,54 +42,38 @@ tpl_index = env.get_template("template/index.html")
 cookie_user = None
 
 
-def get_date_of_image_from_exif(image) :
+def get_exif_data(image) :
+    # this returns date, model and orientation
+
+    exif_data = {
+        "date" : None,
+        "model" : None,
+        "orientation" : 1
+    }
+
 
     im = Image.open(image)
 
     try:
         exif = im._getexif()
     except AttributeError :
-        return None
+        return exif_data
 
-    exif_table = {}
+
     for tag_id, value in exif.items() :
         tag = TAGS.get(tag_id, tag_id)
+
         if tag == "DateTimeOriginal" :
-            return value.replace(":", "/", 2) # YYYY:MM:DD to YYYY/MM/DD
+            # YYYY:MM:DD to YYYY/MM/DD
+            exif_data["date"] = value.replace(":", "/", 2)
 
-    return None
+        elif tag == "Model" :
+            exif_data["model"] = value
 
-def get_model_of_image_from_exif(image) :
-
-    im = Image.open(image)
-
-    try:
-        exif = im._getexif()
-    except AttributeError :
-        return None
-
-    for tag_id, value in exif.items() :
-        tag = TAGS.get(tag_id, tag_id)
-        if tag == "Model" :
-            return value
-
-    return None
-
-def get_orientation_of_image_from_exif(image) :
-
-    im = Image.open(image)
-
-    try:
-        exif = im._getexif()
-    except AttributeError :
-        return 1
-
-    for tag_id, value in exif.items() :
-        tag = TAGS.get(tag_id, tag_id)
-        if tag == "Orientation" :
-            return value
-
-    return 1 # orientation is not changed
+        elif tag == "Orientation" :
+            exif_data["orientation"] = value
+    
+    return exif_data
 
 
 def index(message) :
@@ -124,14 +108,17 @@ def index(message) :
         images = os.listdir(user_image_dir)
 
         for image in images :
+
             p = {}
             p["image"] = os.path.join(user_image_dir, image)
             p["thumbnail"] = os.path.join(user_thumb_dir, image)
 
             p["user"] = user
             p["name"] = image
-            p["date"] = get_date_of_image_from_exif(p["image"])
-            p["model"] = get_model_of_image_from_exif(p["image"])
+
+            exif_data = get_exif_data(p["image"])
+            p["date"] = exif_data["date"]
+            p["model"] = exif_data["model"]
             photos.append(p)
 
 
@@ -274,7 +261,8 @@ def create_image_and_thumb(f_in, image, thumb) :
         8: lambda img: img.transpose(Image.ROTATE_90),
     }
 
-    orientation = get_orientation_of_image_from_exif(image)
+    exif_data = get_exif_data(image)
+    orientation = exif_data["orientation"]
 
     im = Image.open(image)
     conv = convert_image[orientation](im)
