@@ -114,7 +114,7 @@ def index(message) :
             p["thumbnail"] = os.path.join(user_thumb_dir, image)
 
             p["user"] = user
-            p["name"] = image
+            p["name"] = re.sub("-", "<wbr>-", image)
 
             exif_data = get_exif_data(p["image"])
             p["date"] = exif_data["date"]
