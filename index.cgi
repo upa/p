@@ -59,6 +59,9 @@ def get_exif_data(image) :
     except AttributeError :
         return exif_data
 
+    if not exif :
+        return exif_data
+
 
     for tag_id, value in exif.items() :
         tag = TAGS.get(tag_id, tag_id)

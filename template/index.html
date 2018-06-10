@@ -98,6 +98,8 @@
       var bLazy = new Blazy({
       success: function(e){ setTimeout(function(){}, 200); }
       });
+      setTimeout(function() { bLazy.revalidate(); }, 1000);
+
     </script>
 
   </body>
