@@ -1,9 +1,11 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 import re
 import os
+import stat
 import cgi
+
 from jinja2 import Environment, FileSystemLoader
 
 from logging import getLogger, DEBUG, StreamHandler, Formatter
@@ -21,11 +23,12 @@ logger.propagate = False
 
 import zipfile
 import datetime
-import Cookie
+import http
 
 from PIL import Image
 from PIL.ExifTags import TAGS
 import sys
+
 
 import pconfig # configuration of p
 page_title = pconfig.page_title
@@ -48,18 +51,25 @@ def get_exif_data(image) :
     exif_data = {
         "date" : None,
         "model" : None,
-        "orientation" : 1
+        "orientation" : 1,
+        "error" : None,
     }
 
 
-    im = Image.open(image)
+    try :
+        im = Image.open(image)
+    except IOError :
+        exif_data["error"] = "'I/O Error'"
+        return exif_data
 
     try:
         exif = im._getexif()
     except AttributeError :
+        exif_data["error"] = "Exif Attribute Error"
         return exif_data
 
     if not exif :
+        exif_data["error"] = "No Exif Data"
         return exif_data
 
 
@@ -68,6 +78,12 @@ def get_exif_data(image) :
 
         if tag == "DateTimeOriginal" :
             # YYYY:MM:DD to YYYY/MM/DD
+            exif_data["date"] = value.replace(":", "/", 2)
+
+        elif tag == "DateTime" and not exif_data["date"] :
+            exif_data["date"] = value.replace(":", "/", 2)
+
+        elif tag == "DateTimeDigitized" and not exif_data["date"] :
             exif_data["date"] = value.replace(":", "/", 2)
 
         elif tag == "Model" :
@@ -117,16 +133,17 @@ def index(message) :
             p["thumbnail"] = os.path.join(user_thumb_dir, image)
 
             p["user"] = user
-            p["name"] = re.sub("-", "<wbr>-", image)
+            p["name"] = image.replace("-", "<wbr>-").replace("_", "<wbr>_")
 
             exif_data = get_exif_data(p["image"])
             p["date"] = exif_data["date"]
             p["model"] = exif_data["model"]
+            p["error"] = exif_data["error"]
             photos.append(p)
 
 
     filter_users.sort(key = str.lower)
-    photos.sort(key = lambda x : x["date"])
+    photos.sort(key = lambda x : x["date"] if x["date"] else "0")
     photos.reverse()
 
     if cookie_user :
@@ -144,8 +161,8 @@ def index(message) :
                              "filter_users" : filter_users,
                              "message" : message})
 
-    print "Content-Type: text/html; charset=utf-8\n"
-    sys.stdout.write(html.encode('utf-8'))
+    print("Content-Type: text/html; charset=utf-8\n")
+    sys.stdout.write(html)
 
 
 def handle_zip(fm_file, fm_user) :
@@ -205,11 +222,10 @@ def upload() :
 
     if not os.path.exists(user_image_dir) :
         os.mkdir(user_image_dir)
-        os.chmod(user_image_dir, 0777)
-
+        os.chmod(user_image_dir, stat.S_IRWXU | stat.SIRWXG | stat.S_IRWXO)
     if not os.path.exists(user_thumb_dir) :
         os.mkdir(user_thumb_dir)
-        os.chmod(user_thumb_dir, 0777)
+        os.chmod(user_thumb_dir, stat.S_IRWXU | stat.SIRWXG | stat.S_IRWXO)
 
 
     # set cookie
@@ -287,7 +303,7 @@ if __name__ == "__main__" :
 
     if "HTTP_COOKIE" in os.environ :
         try:
-            cookie = Cookie.SimpleCookie()
+            cookie = http.cookies.SimpleCookie()
             cookie.load(os.environ["HTTP_COOKIE"])
             if cookie["username"].value :
                 cookie_user = cookie["username"].value

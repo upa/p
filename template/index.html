@@ -81,8 +81,10 @@
 	<div class="caption">
 	  {% if p.date %}
 	  {{ p.date }} {{ p.name }} by {{ p.user }} with {{ p.model }}
+	  {% elif p.error %}
+	  {{ p.name }} by {{ p.user }} (Error: {{ p.error }})
 	  {% else %}
-	  {{ p.name }} by {{ p.user }} (no exif data)
+	  {{ p.name }} by {{ p.user }} (no date info)
 	  {% endif %}
 	</div>
       </div>
