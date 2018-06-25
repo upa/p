@@ -170,9 +170,9 @@ def handle_zip(fm_file, fm_user) :
     # copy and unzip the zip file at /tmp
     zip = os.path.join("/tmp", fm_file.filename)
 
-    fo = file(zip, "wb")
+    fo = open(zip, "wb")
     while True :
-        chunk = fm_file.file.read(4096)
+        chunk = fm_file.file.read(65536)
         if not chunk: break
         fo.write(chunk)
     fo.close()
@@ -258,9 +258,9 @@ def upload() :
 
 def create_image_and_thumb(f_in, image, thumb) :
     
-    fo = file(image, "wb")
+    fo = open(image, "wb")
     while True :
-        chunk = f_in.read(4096)
+        chunk = f_in.read(65536)
         if not chunk : break
         fo.write(chunk)
     fo.close()
