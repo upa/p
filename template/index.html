@@ -81,11 +81,16 @@
 	<div class="caption">
 	  {% if p.date %}
 	  {{ p.date }} <br/> {{ p.name }} by {{ p.user }}
+
 	  {% if p.model  %} with {{ p.model }} {% endif %}
 	  
 	  {% elif p.error %}
 
 	  {{ p.name }} by {{ p.user }} (Error: {{ p.error }})
+
+	  {% elif p.uploaded %}
+
+	  {{ p.uploaded }} (uploaded) <br/> {{ p.name }} by {{ p.user }}
 
 	  {% else %}
 

@@ -4,6 +4,7 @@
 import re
 import os
 import stat
+import datetime
 import cgi
 
 from jinja2 import Environment, FileSystemLoader
@@ -94,6 +95,14 @@ def get_exif_data(image) :
     
     return exif_data
 
+def get_create_time(image) :
+
+    try :
+        ctime = os.path.getctime(image)
+    except :
+        return None
+    return datetime.date.fromtimestamp(ctime).strftime("%Y/%m/%d uploaded")
+
 
 def index(message) :
 
@@ -139,6 +148,8 @@ def index(message) :
             p["date"] = exif_data["date"]
             p["model"] = exif_data["model"]
             p["error"] = exif_data["error"]
+            if not p["date"] :
+                p["date"] = get_create_time(p["image"])
             photos.append(p)
 
 
