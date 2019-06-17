@@ -165,6 +165,7 @@ def index(message) :
         c = None
 
     html = tpl_index.render({"photos" : photos,
+                             "num_photos" : len(photos),
                              "page_title" : page_title,
                              "cookie" : c,
                              "cookie_user" : cookie_user,
@@ -219,6 +220,8 @@ def upload() :
 
     fm_user = form["upload-user"]
     fm_file = form["upload-file"]
+
+    fm_user.value = fm_user.value.strip()
 
     if fm_user.value is "" :
         return "empty user name is prohibited"
