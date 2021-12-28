@@ -1,6 +1,6 @@
 # photo uploader
 
-required packages: Image, jinja2
+required packages: pillow, jinja2, exifread, pyheif
 
 mkdir thumb
 mkdir image

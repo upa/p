@@ -15,7 +15,7 @@
 
     <div id="header">
       <h1> <a href="index.cgi"> {{ page_title }} </a> </h1>
-      <p> {{ num_photos }} pictures uploaded. </p>
+      <p> We have {{ num_photos }} pictures. </p>
     </div>
 
     <div id="upload">
@@ -23,8 +23,9 @@
 	    method="POST" enctype="multipart/form-data">
 
 	<div class="upload-form-component">
-	  File select: (multiple) jpg/png
-	  <input type="file" name="upload-file" accept="image/*" multiple>
+	  Select Photos:
+	  <input type="file" name="upload-file" accept="image/*,.HEIC"
+		 multiple>
 	</div>
 
 	<div class="upload-form-component">

@@ -3,6 +3,7 @@
 
 import re
 import os
+import io
 import stat
 import datetime
 import cgi
@@ -26,6 +27,9 @@ import zipfile
 import datetime
 import http
 
+import pyheif
+import exifread
+
 from PIL import Image
 from PIL.ExifTags import TAGS
 import sys
@@ -46,8 +50,8 @@ tpl_index = env.get_template("template/index.html")
 cookie_user = None
 
 
-def get_exif_data(image) :
-    # this returns date, model and orientation
+def get_exif_data(image):
+    # we need only date, model and orientation
 
     exif_data = {
         "date" : None,
@@ -56,44 +60,43 @@ def get_exif_data(image) :
         "error" : None,
     }
 
+    """
+    How to read exif from HEIF is:
+    https://stackoverflow.com/questions/54395735/how-to-work-with-heic-image-file-types-in-python
+    """
 
-    try :
-        im = Image.open(image)
-    except IOError :
-        exif_data["error"] = "'I/O Error'"
-        return exif_data
-
-    try:
-        exif = im._getexif()
-    except AttributeError :
-        exif_data["error"] = "Exif Attribute Error"
-        return exif_data
+    with open(image, "rb") as f:
+        if re.search(r"\.(HEIC|heic)$", image):
+            im = pyheif.read_heif(image)
+            for meta in im.metadata or []:
+                if meta["type"] == "Exif":
+                    exif = exifread.process_file(io.BytesIO(meta["data"][6:]))
+        else:
+            exif = exifread.process_file(f)
 
     if not exif :
         exif_data["error"] = "No Exif Data"
-        return exif_data
+        return (None, exif_data)
 
+    for tag, v in exif.items() :
 
-    for tag_id, value in exif.items() :
-        tag = TAGS.get(tag_id, tag_id)
-
-        if tag == "DateTimeOriginal" :
+        if tag == "EXIF DateTimeOriginal" :
             # YYYY:MM:DD to YYYY/MM/DD
-            exif_data["date"] = value.replace(":", "/", 2)
+            exif_data["date"] = str(v).replace(":", "/", 2)
 
-        elif tag == "DateTime" and not exif_data["date"] :
-            exif_data["date"] = value.replace(":", "/", 2)
+        elif tag == "Image DateTime" and not exif_data["date"] :
+            exif_data["date"] = str(v).replace(":", "/", 2)
 
-        elif tag == "DateTimeDigitized" and not exif_data["date"] :
-            exif_data["date"] = value.replace(":", "/", 2)
+        elif tag == "EXIF DateTimeDigitized" and not exif_data["date"] :
+            exif_data["date"] = str(v).replace(":", "/", 2)
 
-        elif tag == "Model" :
-            exif_data["model"] = value
+        elif tag == "Image Model" :
+            exif_data["model"] = str(v)
 
-        elif tag == "Orientation" :
-            exif_data["orientation"] = value
+        elif tag == "Image Orientation" :
+            exif_data["orientation"] = v.values.pop(0)
     
-    return exif_data
+    return (exif, exif_data)
 
 def get_create_time(image) :
 
@@ -139,12 +142,12 @@ def index(message) :
 
             p = {}
             p["image"] = os.path.join(user_image_dir, image)
-            p["thumbnail"] = os.path.join(user_thumb_dir, image)
+            p["thumbnail"] = os.path.join(user_thumb_dir, image) + ".jpg"
 
             p["user"] = user
             p["name"] = image.replace("-", "<wbr>-").replace("_", "<wbr>_")
 
-            exif_data = get_exif_data(p["image"])
+            exif, exif_data = get_exif_data(p["image"])
             p["date"] = exif_data["date"]
             p["model"] = exif_data["model"]
             p["error"] = exif_data["error"]
@@ -177,43 +180,6 @@ def index(message) :
     sys.stdout.write(html)
 
 
-def handle_zip(fm_file, fm_user) :
-
-    # copy and unzip the zip file at /tmp
-    zip = os.path.join("/tmp", fm_file.filename)
-
-    fo = open(zip, "wb")
-    while True :
-        chunk = fm_file.file.read(65536)
-        if not chunk: break
-        fo.write(chunk)
-    fo.close()
-
-    # copy photo files from zip archive to image directory
-    uploaded_files = []
-    with zipfile.ZipFile(zip, 'r') as z:
-        
-        for filepath in z.namelist() :
-
-            if re.search(r'\.(png|PNG|jpg|JPG)', filepath) :
-                filename = filepath.split('/').pop()
-                if filename[0] == "." : continue
-
-            else :
-                continue
-
-            with z.open(filepath) as f :
-                image = os.path.join(image_dir, fm_user.value, filename)
-                thumb = os.path.join(thumb_dir, fm_user.value, filename)
-                create_image_and_thumb(f, image, thumb)
-
-                uploaded_files.append(filename)
-
-    os.remove(zip)
-
-    return uploaded_files
-
-
 def upload() :
 
     form = cgi.FieldStorage()
@@ -223,7 +189,7 @@ def upload() :
 
     fm_user.value = fm_user.value.strip()
 
-    if fm_user.value is "" :
+    if fm_user.value == "" :
         return "empty user name is prohibited"
 
     if (not isinstance(fm_file, list) and
@@ -251,21 +217,16 @@ def upload() :
     else :
         fm_files = fm_file
 
-    logger.info("fm_files: %s" % fm_files)
-
     uploaded_files = []
 
     for fm in fm_files :
+        # write uploaded file to image directory
+        image = os.path.join(image_dir, fm_user.value, fm.filename)
+        thumb = os.path.join(thumb_dir, fm_user.value, fm.filename)
+        thumb += ".jpg"
 
-        if re.search(r'\.zip$', fm.filename) :
-            uploaded_files += handle_zip(fm, fm_user)
-        
-        else :
-            # write uploaded file to image directory
-            image = os.path.join(image_dir, fm_user.value, fm.filename)
-            thumb = os.path.join(thumb_dir, fm_user.value, fm.filename)
-            create_image_and_thumb(fm.file, image, thumb)
-            uploaded_files.append(fm.filename)
+        create_image_and_thumb(fm.file, image, thumb)
+        uploaded_files.append(fm.filename)
 
     return "%s uploaded by %s" % (" ".join(uploaded_files), fm_user.value)
 
@@ -279,8 +240,18 @@ def create_image_and_thumb(f_in, image, thumb) :
         fo.write(chunk)
     fo.close()
 
-    # create thumbnail
+    exif, exif_data = get_exif_data(image)
+    orientation = exif_data["orientation"]
 
+    if re.search(r"\.(HEIC|heic)$", image):
+        heif_file = pyheif.read(image)
+        im = Image.frombytes(heif_file.mode, heif_file.size,
+                             heif_file.data, "raw", heif_file.mode,
+                             heif_file.stride)
+    else:
+        im = Image.open(image)
+
+    # create thumbnail
     convert_image = {
         1: lambda img: img,
         2: lambda img: img.transpose(Image.FLIP_LEFT_RIGHT),
@@ -294,13 +265,9 @@ def create_image_and_thumb(f_in, image, thumb) :
         8: lambda img: img.transpose(Image.ROTATE_90),
     }
 
-    exif_data = get_exif_data(image)
-    orientation = exif_data["orientation"]
-
-    im = Image.open(image)
     conv = convert_image[orientation](im)
     conv.thumbnail((thumb_width, thumb_height), Image.ANTIALIAS)
-    conv.save(thumb)
+    conv.save(thumb, "JPEG")
 
     return
 
