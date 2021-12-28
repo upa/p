@@ -25,7 +25,7 @@ logger.propagate = False
 
 import zipfile
 import datetime
-import http
+from http import cookies
 
 import pyheif
 import exifread
@@ -46,8 +46,6 @@ thumb_height = 380
 
 env = Environment(loader = FileSystemLoader("./", encoding = "utf-8"))
 tpl_index = env.get_template("template/index.html")
-
-cookie_user = None
 
 
 def get_exif_data(image):
@@ -107,7 +105,7 @@ def get_create_time(image) :
     return datetime.date.fromtimestamp(ctime).strftime("%Y/%m/%d uploaded")
 
 
-def index(message) :
+def index(message, cookie) :
 
     photos = []
 
@@ -160,21 +158,18 @@ def index(message) :
     photos.sort(key = lambda x : x["date"] if x["date"] else "0")
     photos.reverse()
 
-    if cookie_user :
-        expire = datetime.datetime.today() + datetime.timedelta(days = 365)
-        e = expire.strftime("%a, %d-%b-%Y 00:00:00 GMT")
-        c = "Set-Cookie: username=%s; expires=%s;" % (cookie_user, e)
-    else :
-        c = None
+    cookie_user = None if not cookie else cookie["username"].value
 
     html = tpl_index.render({"photos" : photos,
                              "num_photos" : len(photos),
                              "page_title" : page_title,
-                             "cookie" : c,
                              "cookie_user" : cookie_user,
                              "filter_user" : filter_user,
                              "filter_users" : filter_users,
                              "message" : message})
+
+    if cookie:
+        print(cookie.output())
 
     print("Content-Type: text/html; charset=utf-8\n")
     sys.stdout.write(html)
@@ -182,12 +177,17 @@ def index(message) :
 
 def upload() :
 
+    logger.info("upload")
+
     form = cgi.FieldStorage()
 
-    fm_user = form["upload-user"]
     fm_file = form["upload-file"]
-
+    fm_user = form["upload-user"]
     fm_user.value = fm_user.value.strip()
+
+    cookie = cookies.SimpleCookie()
+    cookie["username"] = fm_user.value
+    logger.info("make cookie done")
 
     if fm_user.value == "" :
         return "empty user name is prohibited"
@@ -202,15 +202,10 @@ def upload() :
 
     if not os.path.exists(user_image_dir) :
         os.mkdir(user_image_dir)
-        os.chmod(user_image_dir, stat.S_IRWXU | stat.SIRWXG | stat.S_IRWXO)
+        os.chmod(user_image_dir, stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO)
     if not os.path.exists(user_thumb_dir) :
         os.mkdir(user_thumb_dir)
-        os.chmod(user_thumb_dir, stat.S_IRWXU | stat.SIRWXG | stat.S_IRWXO)
-
-
-    # set cookie
-    global cookie_user
-    cookie_user = fm_user.value
+        os.chmod(user_thumb_dir, stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO)
 
     if not isinstance(fm_file, list):
         fm_files = [fm_file]
@@ -228,7 +223,8 @@ def upload() :
         create_image_and_thumb(fm.file, image, thumb)
         uploaded_files.append(fm.filename)
 
-    return "%s uploaded by %s" % (" ".join(uploaded_files), fm_user.value)
+    return ("%s uploaded by %s" % (" ".join(uploaded_files), fm_user.value),
+            cookie)
 
 
 def create_image_and_thumb(f_in, image, thumb) :
@@ -274,21 +270,18 @@ def create_image_and_thumb(f_in, image, thumb) :
 
 if __name__ == "__main__" :
 
+    cookie = None
     upload_ret = None
 
-    try :
-        if os.environ["REQUEST_METHOD"] == "POST" :
-            upload_ret = upload()
-    except :
-        pass
+    if ("REQUEST_METHOD" in os.environ and
+        os.environ["REQUEST_METHOD"] == "POST") :
+        upload_ret, cookie = upload()
 
-    if "HTTP_COOKIE" in os.environ :
+    if not cookie and "HTTP_COOKIE" in os.environ :
         try:
-            cookie = http.cookies.SimpleCookie()
+            cookie = cookies.SimpleCookie()
             cookie.load(os.environ["HTTP_COOKIE"])
-            if cookie["username"].value :
-                cookie_user = cookie["username"].value
         except:
             pass
 
-    index(upload_ret)
+    index(upload_ret, cookie)
