@@ -261,9 +261,9 @@ def create_image_and_thumb(f_in, image, thumb) :
         8: lambda img: img.transpose(Image.ROTATE_90),
     }
 
-    conv = convert_image[orientation](im)
+    conv = convert_image[orientation](im).convert('RGB')
     conv.thumbnail((thumb_width, thumb_height), Image.ANTIALIAS)
-    conv.save(thumb, "JPEG")
+    conv.save(thumb)
 
     return
 
