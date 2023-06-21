@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title> {{ page_title }} </title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+
+    <style type="text/css">
+      {% include "p.css" %}
+    </style>
+  </head>
+
+  <body>
+
+    <div id="header">
+      <h1> <a href="index.cgi"> {{ page_title }} </a> </h1>
+      <p> We have {{ num_photos }} pictures. </p>
+    </div>
+
+    <div id="upload">
+      <form id="upload-form" action="index.cgi"
+	    method="POST" enctype="multipart/form-data">
+
+	<div class="upload-form-component">
+	  Select Photos:
+	  <input type="file" name="upload-file" accept="image/*,.HEIC"
+		 multiple>
+	</div>
+
+	<div class="upload-form-component">
+	User:
+	<input type="text" name="upload-user" class="uploaded-user"
+	       {% if cookie_user %}
+	       value="{{ cookie_user }}"
+	       {% endif %}
+	       >
+	</div>
+
+	<div class="upload-form-component">
+	  Upload: <input name="submit" type="submit" value="UpLoad!">
+	</div>
+
+      </form>
+      
+
+      {% if message %}
+      <p> {{ message }} </p>
+      <a href="index.cgi"> click: [reload] !!</a>
+      {% endif %}
+
+    </div>
+
+
+    <div id="content" class="clearfix">
+
+      {% for p in photos %}
+      <div class="photo-frame">
+	<div class="photo">
+	  <a href="{{ p.image_url_path }}" target="_blank">
+	    <img loading="lazy" src="{{ p.thumb_url_path }}">
+	  </a>
+	</div>
+	<div class="caption">
+	  {% if p.date %}
+	  {{ p.date }} <br/> {{ p.name }} by {{ p.user }}
+
+	  {% if p.model  %} with {{ p.model }} {% endif %}
+	  
+	  {% elif p.error %}
+
+	  {{ p.name }} by {{ p.user }} (Error: {{ p.error }})
+
+	  {% elif p.uploaded %}
+
+	  {{ p.uploaded }} (uploaded) <br/> {{ p.name }} by {{ p.user }}
+
+	  {% else %}
+
+	  {{ p.name }} by {{ p.user }} (no date info)
+
+	  {% endif %}
+	</div>
+      </div>
+      {% endfor %}
+
+    </div>
+
+    <div id="footer">
+      {{ page_title }}
+    </div>
+
+    <script type="text/javascript">
+      var bLazy = new Blazy({
+      success: function(e){ setTimeout(function(){}, 200); }
+      });
+      setTimeout(function() { bLazy.revalidate(); }, 1000);
+
+    </script>
+
+  </body>
+</html>
