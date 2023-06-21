@@ -82,19 +82,7 @@ class ExifData:
             elif tag == "Image Orientation":
                 self.orientation = v.values.pop(0)
 
-        if not self.date:
-            self.date = self.__class__.get_create_time(image_path)
-
         return self
-
-    @classmethod
-    def load_create_time(cls, image_path):
-        try:
-            ctime = os.path.getctime(image)
-        except:
-            return None
-        return datetime.date.fromtimestamp(ctime).strftime("%Y/%m/%d uploaded")
-
 
     def todict(self):
         return {
@@ -131,20 +119,33 @@ class Photo:
         self.thumb_url_path = os.path.relpath(self.thumb_path, script_dir)
         self.exif = None
         
-    def load_exit(self):
+    def load_exif(self):
         self.exif = ExifData(self.image_path)
+
+    def load_create_time(self):
+        try:
+            ctime = os.path.getctime(self.image_path)
+        except:
+            return "no date info"
+        return datetime.datetime.fromtimestamp(ctime).strftime("%Y/%m/%d %H:%M uploaded")
+
 
     def todict(self):
         if not self.exif:
-            self.load_exit()
+            self.load_exif()
+        image_name = os.path.basename(self.image_path)
+        image_name = image_name.replace("-", "<wbr>-").replace("_", "<wbr>_")
         return {
             "username": self.username,
+            "image_name": image_name,
             "image_path": self.image_path,
             "thumb_path": self.thumb_path,
             "image_url_path": self.image_url_path,
             "thumb_url_path": self.thumb_url_path,
             "exif": self.exif.todict(),
+            "uploadedat": self.load_create_time()
         }
+
 
     @classmethod
     def fromdict(cls, d):
@@ -189,7 +190,7 @@ class Photo:
             8: lambda img: img.transpose(Image.ROTATE_90),
         }
 
-        self.load_exit()
+        self.load_exif()
         conv = convert_image[self.exif.orientation](im).convert('RGB')
         conv.thumbnail((thumb_width, thumb_height), Image.LANCZOS)
         conv.save(self.thumb_path)
@@ -231,12 +232,12 @@ def upload():
         form_files = form_file
 
     uploaded_files = []
-    for form in form_files:
-        if not form_file.file or not form_file.filename:
+    for fmf in form_files:
+        if not fmf.file or not fmf.filename:
             return "File not specified", cookie
-        p = Photo(username = username, filename = form.filename)
-        p.upload(form.file)
-        uploaded_files.append(form.filename)
+        p = Photo(username = username, filename = fmf.filename)
+        p.upload(fmf.file)
+        uploaded_files.append(fmf.filename)
 
     return("%s uploaded by %s" % (" ".join(uploaded_files), username), cookie)
 
@@ -257,9 +258,14 @@ def index(message, cookie):
             for line in f:
                 photos.append(json.loads(line.strip()))
 
-    key = lambda x: x["exif"]["date"] if x["exif"] and x["exif"]["date"] else "0"
-    photos.sort(key = key)
-    photos.reverse()
+    def sort_by_date(x):
+        if x["exif"] and x["exif"]["date"]:
+            return x["exif"]["date"]
+        if x["uploadedat"]:
+            return x["uploadedat"]
+        else:
+            return "0"
+    photos.sort(key = sort_by_date, reverse = True)
 
     cookie_user = None if not cookie else cookie["username"].value
 
@@ -273,7 +279,7 @@ def index(message, cookie):
     if cookie:
         out += cookie.output()
 
-    out += "Content-Type: text/html; charset=utf-8\n"
+    out += "Content-Type: text/html; charset=utf-8\n\n"
     out += html
 
     print(out)
@@ -301,7 +307,7 @@ def scan(debug = False):
             if not isimg.match(filename):
                 continue
             p = Photo(username = username, filename = filename)
-            p.load_exit()
+            p.load_exif()
             user_photos.append(p.todict())
             
         if debug:
