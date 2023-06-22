@@ -3,3 +3,4 @@ thumb
 image
 .htaccess
 *.pyc
+*.patch

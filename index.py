@@ -248,15 +248,21 @@ def index(message, cookie):
 
     # retrieve photos from list.txt in username directories
     users = os.listdir(image_dir)
+    usernamemap = {} # key is username, value is (temporal) userid
 
     for username in users:
         listtxt = listtxt_path(username)
         if not os.path.exists(listtxt):
             continue
 
+        # save userid
+        usernamemap[username] = "user{}".format(len(usernamemap.keys()))
+
         with open(listtxt, "r") as f:
             for line in f:
-                photos.append(json.loads(line.strip()))
+                d = json.loads(line.strip())
+                d["userid"] = usernamemap[username] # insert userid to photo dict
+                photos.append(d)
 
     def sort_by_date(x):
         if x["exif"] and x["exif"]["date"]:
@@ -270,6 +276,8 @@ def index(message, cookie):
     cookie_user = None if not cookie else cookie["username"].value
 
     html = tpl_index.render({"photos": photos,
+                             "usernamemaps": sorted(usernamemap.items(),
+                                                    key = lambda x: x[0].lower()),
                              "num_photos": len(photos),
                              "page_title": page_title,
                              "cookie_user": cookie_user,
@@ -291,9 +299,9 @@ def scan(debug = False):
 
     isimg = re.compile(r".*(png|PNG|jpg|JPG|jpeg|JPEG|heic|HEIC)$")
 
-    users = os.listdir(image_dir)
+    usernames = os.listdir(image_dir)
 
-    for username in users:
+    for username in usernames:
         user_image_dir = os.path.join(image_dir, username)
         if (not os.path.isdir(user_image_dir) or
             user_image_dir == "." or user_image_dir == ".."):
