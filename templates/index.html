@@ -29,8 +29,20 @@
 	      checkboxes[n].dispatchEvent(new Event('change'));
 	  }
       }
-    </script>
 
+      function window_resized() {
+	  const frame_width = 270;
+	  const width = document.body.clientWidth - 20;
+	  var comp = document.getElementById("filter-component");
+	  var new_width =  (Math.floor(width / frame_width) * frame_width - 40) + "px";
+	  if (width < 667) {
+	      new_width = null;
+	  }
+	  if (comp.style.width != new_width) {
+	      comp.style.width = new_width;
+	  }
+      }
+    </script>
 
   </head>
 
@@ -72,21 +84,23 @@
 	<a href="index.cgi"> click: [reload] !!</a>
 	{% endif %}
 
-	<div class="filter-component">
-	  <input type="button" value="check all" onclick="filter_change_all(true)">
-	  <input type="button" value="uncheck all" onclick="filter_change_all(false)">
-	  {% for usernamemap in usernamemaps %}
-	  <label>
-	    {{ usernamemap.0 }}<input type="checkbox"
-				      id="checkbox:{{usernamemap.1}}"
-				      onchange="filter_changed('{{ usernamemap.1 }}')"
-				      class="filter-checkbox"
-				      checked>
-	  </label>
-	  {% endfor %}
-	</div>
       </div>
+    </div>
 
+    <div id="filter">
+      <div id="filter-component">
+	<input type="button" value="check all" onclick="filter_change_all(true)">
+	<input type="button" value="uncheck all" onclick="filter_change_all(false)">
+	{% for usernamemap in usernamemaps %}
+	<label>
+	  {{ usernamemap.0 }}<input type="checkbox"
+				    id="checkbox:{{usernamemap.1}}"
+				    onchange="filter_changed('{{ usernamemap.1 }}')"
+				    class="filter-checkbox"
+				    checked>
+	</label>
+	{% endfor %}
+      </div>
     </div>
 
     <div id="content" class="clearfix">
@@ -121,5 +135,11 @@
     <div id="footer">
       {{ page_title }}
     </div>
+
+    <script type="text/javascript">
+      window_resized();
+      window.addEventListener("resize", window_resized);
+    </script>
+
   </body>
 </html>
