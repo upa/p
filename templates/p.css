@@ -33,6 +33,10 @@ a:focus {
 .clearfix:after	{ clear: both; }
 .clearfix 	{ *zoom: 1; }
 
+/* header */
+#header {
+	margin: 0 0 0 10px;
+}
 
 /* upload form */
 #upload {
@@ -52,16 +56,18 @@ form#upload-form input {
 }
 
 
-/* filter form */
-#filter {
-	margin: 10px 0 0 0;
-	padding: 10px 0 0 0;
-	border-top: gray 1px solid;
+/* filter */
+div.filter-component {
+	margin: 30px 10px 0px 0px;
+	padding: 5px 5px 5px 5px;
+	border: gray 1px solid;
+	line-height: 150%;
+}
+div.filter-component label {
+	display: inline-block;
+	margin: 0px 10px 0px 0px;
 }
 
-form#filter-form select {
-	margin: 0 10px 0 0;
-}
 
 /* content area */
 #content {

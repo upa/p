@@ -7,6 +7,31 @@
     <style type="text/css">
       {% include "p.css" %}
     </style>
+
+    <script type="text/javascript">
+      function filter_changed(userid) {
+	  var checkbox = document.getElementById("checkbox:" + userid);
+	  var photos = document.getElementsByClassName(userid);
+	  for (var n = 0; n < photos.length; n++) {
+	      var obj = photos[n];
+	      if (checkbox.checked) {
+		  obj.style.display = "";
+	      } else {
+		  obj.style.display = "none";
+	      }
+	  }
+      }
+
+      function filter_change_all(is_checked) {
+	  var checkboxes = document.getElementsByClassName("filter-checkbox");
+	  for (var n = 0; n < checkboxes.length; n++) {
+	      checkboxes[n].checked = is_checked;
+	      checkboxes[n].dispatchEvent(new Event('change'));
+	  }
+      }
+    </script>
+
+
   </head>
 
   <body>
@@ -14,46 +39,60 @@
     <div id="header">
       <h1> <a href="index.cgi"> {{ page_title }} </a> </h1>
       <p> We have {{ num_photos }} pictures. </p>
-    </div>
 
-    <div id="upload">
-      <form id="upload-form" action="index.cgi"
-	    method="POST" enctype="multipart/form-data">
 
-	<div class="upload-form-component">
-	  Select Photos:
-	  <input type="file" name="upload-file" accept="image/*,.HEIC"
-		 multiple>
-	</div>
+      <div id="upload">
+	<form id="upload-form" action="index.cgi"
+	      method="POST" enctype="multipart/form-data">
 
-	<div class="upload-form-component">
-	User:
-	<input type="text" name="upload-user" class="uploaded-user"
-	       {% if cookie_user %}
-	       value="{{ cookie_user }}"
-	       {% endif %}
-	       >
-	</div>
+	  <div class="upload-form-component">
+	    Select Photos:
+	    <input type="file" name="upload-file" accept="image/*,.HEIC"
+		   multiple>
+	  </div>
 
-	<div class="upload-form-component">
-	  Upload: <input name="submit" type="submit" value="UpLoad!">
-	</div>
+	  <div class="upload-form-component">
+	    User:
+	    <input type="text" name="upload-user" class="uploaded-user"
+		   {% if cookie_user %}
+		   value="{{ cookie_user }}"
+		   {% endif %}
+		   >
+	  </div>
 
-      </form>
+	  <div class="upload-form-component">
+	    Upload: <input name="submit" type="submit" value="UpLoad!">
+	  </div>
+
+	</form>
       
 
-      {% if message %}
-      <p> {{ message }} </p>
-      <a href="index.cgi"> click: [reload] !!</a>
-      {% endif %}
+	{% if message %}
+	<p> {{ message }} </p>
+	<a href="index.cgi"> click: [reload] !!</a>
+	{% endif %}
+
+	<div class="filter-component">
+	  <input type="button" value="check all" onclick="filter_change_all(true)">
+	  <input type="button" value="uncheck all" onclick="filter_change_all(false)">
+	  {% for usernamemap in usernamemaps %}
+	  <label>
+	    {{ usernamemap.0 }}<input type="checkbox"
+				      id="checkbox:{{usernamemap.1}}"
+				      onchange="filter_changed('{{ usernamemap.1 }}')"
+				      class="filter-checkbox"
+				      checked>
+	  </label>
+	  {% endfor %}
+	</div>
+      </div>
 
     </div>
-
 
     <div id="content" class="clearfix">
 
       {% for p in photos %}
-      <div class="photo-frame">
+      <div class="photo-frame {{ p.userid }}">
 	<div class="photo">
 	  <a href="{{ p.image_url_path }}" target="_blank">
 	    <img loading="lazy" src="{{ p.thumb_url_path }}">
@@ -82,14 +121,5 @@
     <div id="footer">
       {{ page_title }}
     </div>
-
-    <script type="text/javascript">
-      var bLazy = new Blazy({
-      success: function(e){ setTimeout(function(){}, 200); }
-      });
-      setTimeout(function() { bLazy.revalidate(); }, 1000);
-
-    </script>
-
   </body>
 </html>
