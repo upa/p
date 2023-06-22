@@ -101,7 +101,7 @@ class ExifData:
         
 
 class Photo:
-    def __init__(self, username = None, filename = None):
+    def __init__(self, username = None, filename = None, check_thumb_path = False):
 
         if (username and not filename) or (not username and filename):
             raise RuntimeError("username and filename must be both None or exist")
@@ -114,7 +114,15 @@ class Photo:
 
         self.image_path = os.path.join(image_dir, username, filename)
         self.thumb_path = os.path.join(thumb_dir, username, filename)
-        self.thumb_path += ".jpg"
+        if check_thumb_path and os.path.exists(self.thumb_path):
+            # For backward compatibility. Before 2021, '.jpg' suffix
+            # is not added to thumbnail file. So, if thumbnail without
+            # '.jpg' exists, does not add ".jpg". This is enabled when
+            # only scanning.
+            pass
+        else:
+            self.thumb_path += ".jpg"
+
         self.image_url_path = os.path.relpath(self.image_path, script_dir)
         self.thumb_url_path = os.path.relpath(self.thumb_path, script_dir)
         self.exif = None
@@ -314,7 +322,7 @@ def scan(debug = False):
         for filename in os.listdir(user_image_dir):
             if not isimg.match(filename):
                 continue
-            p = Photo(username = username, filename = filename)
+            p = Photo(username = username, filename = filename, check_thumb_path = True)
             p.load_exif()
             user_photos.append(p.todict())
             
