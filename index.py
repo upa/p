@@ -281,7 +281,10 @@ def index(message, cookie):
             return "0"
     photos.sort(key = sort_by_date, reverse = True)
 
-    cookie_user = None if not cookie else cookie["username"].value
+    if cookie and "username" in cookie:
+        cookie_user = cookie["username"].value
+    else:
+        cookie_user = None
 
     html = tpl_index.render({"photos": photos,
                              "usernamemaps": sorted(usernamemap.items(),
