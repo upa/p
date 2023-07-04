@@ -254,22 +254,16 @@ def index(message, cookie):
 
     photos = []
 
-    # retrieve photos from list.txt in username directories
-    users = os.listdir(image_dir)
-    usernamemap = {} # key is username, value is (temporal) userid
+    usernames = sorted(os.listdir(image_dir))
 
-    for username in users:
+    for username in usernames:
         listtxt = listtxt_path(username)
         if not os.path.exists(listtxt):
             continue
 
-        # save userid
-        usernamemap[username] = "user{}".format(len(usernamemap.keys()))
-
         with open(listtxt, "r") as f:
             for line in f:
                 d = json.loads(line.strip())
-                d["userid"] = usernamemap[username] # insert userid to photo dict
                 photos.append(d)
 
     def sort_by_date(x):
@@ -287,8 +281,7 @@ def index(message, cookie):
         cookie_user = None
 
     html = tpl_index.render({"photos": photos,
-                             "usernamemaps": sorted(usernamemap.items(),
-                                                    key = lambda x: x[0].lower()),
+                             "usernames": usernames,
                              "num_photos": len(photos),
                              "page_title": page_title,
                              "cookie_user": cookie_user,

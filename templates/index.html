@@ -9,33 +9,59 @@
     </style>
 
     <script type="text/javascript">
-      function filter_changed(userid) {
-	  var checkbox = document.getElementById("checkbox:" + userid);
-	  var photos = document.getElementsByClassName(userid);
-	  for (var n = 0; n < photos.length; n++) {
-	      var obj = photos[n];
-	      if (checkbox.checked) {
-		  obj.style.display = "";
-	      } else {
-		  obj.style.display = "none";
+      function filter_user_dict() {
+	  let d = {}
+	  let checkboxes = document.getElementsByClassName("filter-checkbox");
+	  for (let n = 0; n < checkboxes.length; n++) {
+	      checkbox = checkboxes[n];
+	      d[checkbox.name] = checkbox.checked;
+	  }
+	  return d;
+      }
+
+      function filter_display_refresh() {
+	  let userdict = filter_user_dict();
+	  let from = document.getElementById("filter-date-from").value.replaceAll("-", "/");
+	  let to = document.getElementById("filter-date-to").value.replaceAll("-", "/");
+	  if (to) {
+	      to = to + " 23:59:59";
+	  }
+
+	  let photos = document.getElementsByClassName("photo-frame");
+	  for (let n = 0; n < photos.length; n++) {
+	      let obj = photos[n];
+	      let new_display_value = "";
+
+	      let username = obj.querySelectorAll(".username")[0].textContent.trim();
+	      if (!userdict[username]) {
+		  new_display_value = "none";
 	      }
+
+	      let date = obj.querySelectorAll('.date')[0].textContent.trim();
+	      if ((from && date < from) || (to && to < date)) {
+		  new_display_value = "none";
+	      }
+
+	      obj.style.display = new_display_value;
 	  }
       }
 
-      function filter_change_all(is_checked) {
-	  var checkboxes = document.getElementsByClassName("filter-checkbox");
-	  for (var n = 0; n < checkboxes.length; n++) {
+      function filter_user_change_all(is_checked) {
+	  let checkboxes = document.getElementsByClassName("filter-checkbox");
+	  for (let n = 0; n < checkboxes.length; n++) {
 	      checkboxes[n].checked = is_checked;
-	      checkboxes[n].dispatchEvent(new Event('change'));
+	      // Don't triger change event for the checkboxes.
+	      // Instead, refresh at the end
 	  }
+	  filter_display_refresh();
       }
 
       function window_resized() {
 	  const frame_width = 270;
 	  const width = document.body.clientWidth - 20;
-	  var comp = document.getElementById("filter-component");
-	  var new_width =  (Math.floor(width / frame_width) * frame_width - 40) + "px";
-	  if (width < 667) {
+	  let comp = document.getElementById("filter");
+	  let new_width =  (Math.floor(width / frame_width) * frame_width - 40) + "px";
+	  if (width < 631) {
 	      new_width = null;
 	  }
 	  if (comp.style.width != new_width) {
@@ -88,19 +114,26 @@
     </div>
 
     <div id="filter">
-      <div id="filter-component">
-	<input type="button" value="check all" onclick="filter_change_all(true)">
-	<input type="button" value="uncheck all" onclick="filter_change_all(false)">
-	{% for usernamemap in usernamemaps %}
+      <div class="filter-component">
+	<input type="button" value="check all" onclick="filter_user_change_all(true)">
+	<input type="button" value="uncheck all" onclick="filter_user_change_all(false)">
+
+	{% for username in usernames %}
 	<label>
-	  {{ usernamemap.0 }}<input type="checkbox"
-				    id="checkbox:{{usernamemap.1}}"
-				    onchange="filter_changed('{{ usernamemap.1 }}')"
-				    class="filter-checkbox"
-				    checked>
+	  {{ username }}<input type="checkbox"
+			       name="{{username}}"
+			       onchange="filter_display_refresh()"
+			       class="filter-checkbox"
+			       checked>
 	</label>
 	{% endfor %}
       </div>
+
+      <div class="filter-component">
+	From <input type="date" id="filter-date-from" onchange="filter_display_refresh()">
+	to <input type="date" id="filter-date-to" onchange="filter_display_refresh()">
+      </div>
+
     </div>
 
     <div id="content" class="clearfix">
@@ -114,14 +147,14 @@
 	</div>
 	<div class="caption">
 	  {% if p.exif.date %}
-	    {{ p.exif.date }} <br/>
-	    {{ p.image_name }} by {{ p.username }}
+	    <span class="date"> {{ p.exif.date }}</span><br/>
+	    {{ p.image_name }} by <span class="username">{{ p.username }}</span>
 	    {% if p.exif.model  %}
 	      with {{ p.exif.model }}
 	    {% endif %}
 	  {% else %}
-	    {{ p.uploadedat }} <br/>
-	    {{ p.image_name }} by {{ p.username }}
+	    <span class="date">{{ p.uploadedat }}</span> <br/>
+	    {{ p.image_name }} by <span class="username">{{ p.username }}</span>
 	  {% endif %}
 	  {% if p.error %}
 	    ({{ p.error }})

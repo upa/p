@@ -60,18 +60,16 @@ form#upload-form input {
 
 #filter {
 	margin: 30px 0 0 10px;
-	width: 100%;
-}
-
-div#filter-component {
-	margin: 0px 0px 0px 0px;
-	padding: 10px 10px 10px 10px;
+	padding: 5px 10px 5px 10px;
 	border: gray 1px solid;
 	line-height: 150%;
-
 }
 
-div#filter-component label {
+div.filter-component {
+	margin: 10px 0 10px 0;
+}
+
+div.filter-component label {
 	display: inline-block;
 	margin: 0px 10px 0px 0px;
 }
@@ -130,11 +128,10 @@ div.caption {
 		margin: 0 0 0 0;
 	}
 
+
 	#filter {
 		margin: 30px 0 0 0;
-	}
-
-	div#filter-component {
+		padding: 5px 10px 5px 10px;
 		border: gray 1px solid;
 		line-height: 150%;
 	}
