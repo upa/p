@@ -27,12 +27,6 @@ a:focus {
 	color: #eee;
 }
 
-/* clearfix class */
-.clearfix:before,
-.clearfix:after	{ content: " "; display: table; }
-.clearfix:after	{ clear: both; }
-.clearfix 	{ *zoom: 1; }
-
 /* header */
 #header {
 	margin: 0 0 0 10px;
@@ -85,18 +79,17 @@ div.filter-component label {
 #content {
 	margin: 10px 0 0 0;
 	width: 100%;
+	display: flex;
+	flex-wrap: wrap;
 }
 
 div.photo-frame {
-	float: left;
 	width: 250px;
-	height: 285px;
 	border: gray 1px solid;
 	box-sizing: border-box;
 	margin: 10px 10px 10px 10px;
 	padding: 10px 10px 10px 10px;
 	text-align: center;
-	
 }
 
 div.photo {

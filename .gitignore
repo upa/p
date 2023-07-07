@@ -1,6 +1,7 @@
 .*.swp
 thumb
 image
+index.cgi
 .htaccess
 *.pyc
 *.patch
