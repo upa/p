@@ -12,7 +12,6 @@ import json
 import argparse
 
 from jinja2 import Environment, FileSystemLoader
-from http import cookies
 
 import pyheif
 import exifread
@@ -218,11 +217,9 @@ def upload():
     form_user = form["upload-user"]
 
     username = form_user.value.strip()
-    cookie = cookies.SimpleCookie()
-    cookie["username"] = username
 
     if not username:
-        return "Empty user name is prohibited", cookie
+        return "Empty user name is prohibited"
 
     # user directory check and create
     user_image_dir = os.path.join(image_dir, username)
@@ -242,15 +239,15 @@ def upload():
     uploaded_files = []
     for fmf in form_files:
         if not fmf.file or not fmf.filename:
-            return "File not specified", cookie
+            return "File not specified"
         p = Photo(username = username, filename = fmf.filename)
         p.upload(fmf.file)
         uploaded_files.append(fmf.filename)
 
-    return("%s uploaded by %s" % (" ".join(uploaded_files), username), cookie)
+    return"%s uploaded by %s" % (" ".join(uploaded_files), username)
 
 
-def index(message, cookie):
+def index(message):
 
     photos = []
 
@@ -275,22 +272,13 @@ def index(message, cookie):
             return "0"
     photos.sort(key = sort_by_date, reverse = True)
 
-    if cookie and "username" in cookie:
-        cookie_user = cookie["username"].value
-    else:
-        cookie_user = None
-
     html = tpl_index.render({"photos": photos,
                              "usernames": usernames,
                              "num_photos": len(photos),
                              "page_title": page_title,
-                             "cookie_user": cookie_user,
                              "message": message})
 
     out = ""
-    if cookie:
-        out += cookie.output()
-
     out += "Content-Type: text/html; charset=utf-8\n\n"
     out += html
 
@@ -332,21 +320,13 @@ def scan(debug = False):
 
 def main():
 
-    cookie = None
     upload_msg = None
 
     if ("REQUEST_METHOD" in os.environ and
         os.environ["REQUEST_METHOD"] == "POST"):
-        upload_msg, cookie = upload()
+        upload_msg = upload()
 
-    if not cookie and "HTTP_COOKIE" in os.environ:
-        try:
-            cookie = cookies.SimpleCookie()
-            cookie.load(os.environ["HTTP_COOKIE"])
-        except:
-            pass
-
-    sys.exit(index(upload_msg, cookie))
+    sys.exit(index(upload_msg))
 
 
 

@@ -92,11 +92,7 @@
 	  <div class="upload-form-component">
 	    <label for="upload-user">User</label>
 	    <input type="text" name="upload-user" class="uploaded-user" id="upload-user"
-		   {% if cookie_user %}
-		   value="{{ cookie_user }}"
-		   {% endif %}
-		   list="user-candidates"
-		   >
+		   list="user-candidates">
 	    <datalist id="user-candidates">
 	      {% for username in usernames %}
 	      <option value="{{username}}">
