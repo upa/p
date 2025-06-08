@@ -49,9 +49,7 @@
       function filter_user_change_all(is_checked) {
 	  let checkboxes = document.getElementsByClassName("filter-checkbox");
 	  for (let n = 0; n < checkboxes.length; n++) {
-	      checkboxes[n].checked = is_checked;
-	      // Do not triger change event for the checkboxes.
-	      // Instead, refresh at the end
+	      checkboxes[n].checked = is_checked; 
 	  }
 	  filter_display_refresh();
       }
@@ -59,6 +57,7 @@
       function window_resized() {
 	  const frame_width = 270;
 	  const width = document.body.clientWidth - 20;
+
 	  let comp = document.getElementById("container");
 	  let new_width =  (Math.floor(width / frame_width) * frame_width) + "px";
 	  if (width < 631) {
@@ -78,43 +77,42 @@
       <div id="header">
 	<h1> <a href="index.cgi"> {{ page_title }} </a> </h1>
 	<p> We have {{ num_photos }} pictures. </p>
-
-
-	<div id="upload">
-	  <form id="upload-form" action="index.cgi"
-		method="POST" enctype="multipart/form-data">
-
-	    <div class="upload-form-component">
-	      <label for="upload-file">Photos</label>
-	      <input type="file" name="upload-file" accept="image/*,.HEIC"
-		     id="upload-file" multiple>
-	    </div>
-
-	    <div class="upload-form-component">
-	      <label for="upload-user">User</label>
-	      <input type="text" name="upload-user" class="uploaded-user" id="upload-user"
-		     list="user-candidates">
-	      <datalist id="user-candidates">
-		{% for username in usernames %}
-		<option value="{{username}}">
-		  {% endfor %}
-	      </datalist>
-	    </div>
-
-	    <div class="upload-form-component">
-	      <label></label>
-	      <input name="submit" type="submit" value="UpLoad!">
-	    </div>
-	  </form>
-
-	  {% if message %}
-	  <p> {{ message }} </p>
-	  <a href="index.cgi"> click: [reload] !!</a>
-	  {% endif %}
-
-	</div>
       </div>
 
+      <div id="upload">
+	<form id="upload-form" action="index.cgi"
+	      method="POST" enctype="multipart/form-data">
+
+	  <div class="upload-form-component">
+	    <label for="upload-file">Photos</label>
+	    <input type="file" name="upload-file" accept="image/*,.HEIC"
+		   id="upload-file" multiple>
+	  </div>
+
+	  <div class="upload-form-component">
+	    <label for="upload-user">User</label>
+	    <input type="text" name="upload-user" class="uploaded-user" id="upload-user"
+		   list="user-candidates">
+	    <datalist id="user-candidates">
+	      {% for username in usernames %}
+	      <option value="{{username}}">
+		{% endfor %}
+	    </datalist>
+	  </div>
+
+	  <div class="upload-form-component">
+	    <label></label>
+	    <input name="submit" type="submit" value="UpLoad!">
+	  </div>
+	</form>
+
+	{% if message %}
+	<p> {{ message }} </p>
+	<a href="index.cgi"> click: [reload] !!</a>
+	{% endif %}
+
+      </div>
+      
       <div id="filter">
 	<div class="filter-component">
 	  <input type="button" value="check all" onclick="filter_user_change_all(true)">
