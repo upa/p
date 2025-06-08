@@ -50,7 +50,7 @@
 	  let checkboxes = document.getElementsByClassName("filter-checkbox");
 	  for (let n = 0; n < checkboxes.length; n++) {
 	      checkboxes[n].checked = is_checked;
-	      // Don't triger change event for the checkboxes.
+	      // Do not triger change event for the checkboxes.
 	      // Instead, refresh at the end
 	  }
 	  filter_display_refresh();
@@ -59,8 +59,8 @@
       function window_resized() {
 	  const frame_width = 270;
 	  const width = document.body.clientWidth - 20;
-	  let comp = document.getElementById("filter");
-	  let new_width =  (Math.floor(width / frame_width) * frame_width - 40) + "px";
+	  let comp = document.getElementById("container");
+	  let new_width =  (Math.floor(width / frame_width) * frame_width) + "px";
 	  if (width < 631) {
 	      new_width = null;
 	  }
@@ -74,108 +74,108 @@
 
   <body>
 
-    <div id="header">
-      <h1> <a href="index.cgi"> {{ page_title }} </a> </h1>
-      <p> We have {{ num_photos }} pictures. </p>
+    <div id="container">
+      <div id="header">
+	<h1> <a href="index.cgi"> {{ page_title }} </a> </h1>
+	<p> We have {{ num_photos }} pictures. </p>
 
 
-      <div id="upload">
-	<form id="upload-form" action="index.cgi"
-	      method="POST" enctype="multipart/form-data">
+	<div id="upload">
+	  <form id="upload-form" action="index.cgi"
+		method="POST" enctype="multipart/form-data">
 
-	  <div class="upload-form-component">
-	    <label for="upload-file">Photos</label>
-	    <input type="file" name="upload-file" accept="image/*,.HEIC"
-		   id="upload-file" multiple>
-	  </div>
+	    <div class="upload-form-component">
+	      <label for="upload-file">Photos</label>
+	      <input type="file" name="upload-file" accept="image/*,.HEIC"
+		     id="upload-file" multiple>
+	    </div>
 
-	  <div class="upload-form-component">
-	    <label for="upload-user">User</label>
-	    <input type="text" name="upload-user" class="uploaded-user" id="upload-user"
-		   list="user-candidates">
-	    <datalist id="user-candidates">
-	      {% for username in usernames %}
-	      <option value="{{username}}">
-	      {% endfor %}
-	    </datalist>
-	  </div>
+	    <div class="upload-form-component">
+	      <label for="upload-user">User</label>
+	      <input type="text" name="upload-user" class="uploaded-user" id="upload-user"
+		     list="user-candidates">
+	      <datalist id="user-candidates">
+		{% for username in usernames %}
+		<option value="{{username}}">
+		  {% endfor %}
+	      </datalist>
+	    </div>
 
-	  <div class="upload-form-component">
-	    <label></label>
-	    <input name="submit" type="submit" value="UpLoad!">
-	  </div>
+	    <div class="upload-form-component">
+	      <label></label>
+	      <input name="submit" type="submit" value="UpLoad!">
+	    </div>
+	  </form>
 
-	</form>
-      
+	  {% if message %}
+	  <p> {{ message }} </p>
+	  <a href="index.cgi"> click: [reload] !!</a>
+	  {% endif %}
 
-	{% if message %}
-	<p> {{ message }} </p>
-	<a href="index.cgi"> click: [reload] !!</a>
-	{% endif %}
-
-      </div>
-    </div>
-
-    <div id="filter">
-      <div class="filter-component">
-	<input type="button" value="check all" onclick="filter_user_change_all(true)">
-	<input type="button" value="uncheck all" onclick="filter_user_change_all(false)">
-
-	{% for username in usernames %}
-	<label>
-	  {{ username }}<input type="checkbox"
-			       name="{{username}}"
-			       onchange="filter_display_refresh()"
-			       class="filter-checkbox"
-			       checked>
-	</label>
-	{% endfor %}
-      </div>
-
-      <div class="filter-component">
-	From <input type="date" id="filter-date-from" onchange="filter_display_refresh()">
-	to <input type="date" id="filter-date-to" onchange="filter_display_refresh()">
-      </div>
-
-    </div>
-
-    <div id="content" class="clearfix">
-
-      {% for p in photos %}
-      <div class="photo-frame {{ p.userid }}">
-	<div class="photo">
-	  <a href="{{ p.image_url_path }}" target="_blank">
-	    <img loading="lazy" src="{{ p.thumb_url_path }}">
-	  </a>
 	</div>
-	<div class="caption">
-	  {% if p.exif.date %}
+      </div>
+
+      <div id="filter">
+	<div class="filter-component">
+	  <input type="button" value="check all" onclick="filter_user_change_all(true)">
+	  <input type="button" value="uncheck all" onclick="filter_user_change_all(false)">
+
+	  {% for username in usernames %}
+	  <label>
+	    {{ username }}<input type="checkbox"
+				 name="{{username}}"
+				 onchange="filter_display_refresh()"
+				 class="filter-checkbox"
+				 checked>
+	  </label>
+	  {% endfor %}
+	</div>
+
+	<div class="filter-component">
+	  From <input type="date" id="filter-date-from" onchange="filter_display_refresh()">
+	  to <input type="date" id="filter-date-to" onchange="filter_display_refresh()">
+	</div>
+
+      </div>
+
+      <div id="content">
+
+	{% for p in photos %}
+	<div class="photo-frame {{ p.userid }}">
+	  <div class="photo">
+	    <a href="{{ p.image_url_path }}" target="_blank">
+	      <img loading="lazy" src="{{ p.thumb_url_path }}">
+	    </a>
+	  </div>
+	  <div class="caption">
+	    {% if p.exif.date %}
 	    <span class="date"> {{ p.exif.date }}</span><br/>
 	    {{ p.image_name }} by <span class="username">{{ p.username }}</span>
 	    {% if p.exif.model  %}
-	      with {{ p.exif.model }}
+	    with {{ p.exif.model }}
 	    {% endif %}
-	  {% else %}
+	    {% else %}
 	    <span class="date">{{ p.uploadedat }}</span> <br/>
 	    {{ p.image_name }} by <span class="username">{{ p.username }}</span>
-	  {% endif %}
-	  {% if p.error %}
+	    {% endif %}
+	    {% if p.error %}
 	    ({{ p.error }})
-	  {% endif %}
+	    {% endif %}
+	  </div>
 	</div>
+	{% endfor %}
+
       </div>
-      {% endfor %}
 
-    </div>
+      <div id="footer">
+	{{ page_title }}
+      </div>
 
-    <div id="footer">
-      {{ page_title }}
     </div>
 
     <script type="text/javascript">
       window_resized();
       window.addEventListener("resize", window_resized);
     </script>
-
   </body>
 </html>
