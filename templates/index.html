@@ -54,6 +54,29 @@
 	  filter_display_refresh();
       }
 
+      function set_username_cookie(name) {
+	  if (!name) {
+	      return;
+	  }
+
+	  let cookie = encodeURIComponent("username") + '=' + encodeURIComponent(name);
+	  cookie += "; max-age=15552000"
+	  document.cookie = cookie;
+      }
+
+      function fill_username_to_form() {
+	  const username = decodeURIComponent(
+	      document.cookie
+		  .split('; ')
+		  .find(row => row.startsWith('username='))
+	      ?.split('=')[1] || ""
+	  );
+	  if (!username) {
+	      return;
+	  }
+	  document.querySelector('input[name="upload-user"]').value = username;
+      }
+
       function window_resized() {
 	  const frame_width = 270;
 	  const width = document.body.clientWidth - 20;
@@ -172,6 +195,8 @@
     </div>
 
     <script type="text/javascript">
+      set_username_cookie("{{ username }}");
+      fill_username_to_form();
       window_resized();
       window.addEventListener("resize", window_resized);
     </script>

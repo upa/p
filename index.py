@@ -209,7 +209,12 @@ class Photo:
             
 
 
-def upload():
+def upload() -> tuple[str, str]:
+
+    """
+    upload photes, returns message to be shown at the top and
+    username who uploaded the photoes.
+    """
 
     form = cgi.FieldStorage()
 
@@ -219,7 +224,7 @@ def upload():
     username = form_user.value.strip()
 
     if not username:
-        return "Empty user name is prohibited"
+        return "Empty user name is prohibited", username
 
     # user directory check and create
     user_image_dir = os.path.join(image_dir, username)
@@ -239,15 +244,15 @@ def upload():
     uploaded_files = []
     for fmf in form_files:
         if not fmf.file or not fmf.filename:
-            return "File not specified"
+            return "File not specified", username
         p = Photo(username = username, filename = fmf.filename)
         p.upload(fmf.file)
         uploaded_files.append(fmf.filename)
 
-    return"%s uploaded by %s" % (" ".join(uploaded_files), username)
+    return "%s uploaded by %s" % (" ".join(uploaded_files), username), username
 
 
-def index(message):
+def index(message, username):
 
     photos = []
 
@@ -276,7 +281,8 @@ def index(message):
                              "usernames": usernames,
                              "num_photos": len(photos),
                              "page_title": page_title,
-                             "message": message})
+                             "message": message,
+                             "username": username})
 
     out = ""
     out += "Content-Type: text/html; charset=utf-8\n\n"
@@ -306,7 +312,11 @@ def scan(debug = False):
         for filename in os.listdir(user_image_dir):
             if not isimg.match(filename):
                 continue
-            p = Photo(username = username, filename = filename, check_thumb_path = True)
+            p = Photo(
+                username = username,
+                filename = filename,
+                check_thumb_path = True
+            )
             p.load_exif()
             user_photos.append(p.todict())
             
@@ -321,12 +331,13 @@ def scan(debug = False):
 def main():
 
     upload_msg = None
+    username = ""
 
     if ("REQUEST_METHOD" in os.environ and
         os.environ["REQUEST_METHOD"] == "POST"):
-        upload_msg = upload()
+        upload_msg, username = upload()
 
-    sys.exit(index(upload_msg))
+    sys.exit(index(upload_msg, username))
 
 
 
